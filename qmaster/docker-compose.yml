@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672" # interfaccia web RabbitMQ
+
+  queue-service:
+    build: ./queue-service
+    container_name: queue-service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+
+  number-service:
+    build: ./number-service
+    container_name: number-service
+    ports:
+      - "8001:8000"
+    depends_on:
+      - queue-service
+
+  display-service:
+    build: ./display-service
+    container_name: display-service
+    depends_on:
+      - rabbitmq
