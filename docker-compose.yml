@@ -26,3 +26,5 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+
+#serve a definire, configurare e avviare più container Docker insieme in modo automatico e coordinato.
