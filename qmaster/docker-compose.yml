@@ -32,7 +32,7 @@ services:
     build: ./queue-service
     container_name: queue-service
     ports:
-      - "8000:8000"
+      - "5000:8000"
     depends_on:
       - redis
       - number-service

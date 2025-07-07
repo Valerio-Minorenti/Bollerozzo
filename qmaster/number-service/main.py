@@ -2,6 +2,16 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
 import os
+import pika
+
+# Connessione a RabbitMQ
+rabbitmq_host = os.getenv("RABBITMQ_HOST", "rabbitmq")
+connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host))
+channel = connection.channel()
+
+# Dichiarazione delle code che ti servono
+channel.queue_declare(queue="sportello1", durable=True)
+channel.queue_declare(queue="display", durable=True)
 
 app = FastAPI()
 
@@ -31,5 +41,12 @@ def take_ticket(data: QueueRequest):
     except Exception as e:
         return {"error": f"Errore nel contattare number-service: {str(e)}"}
 
-    # (Facoltativo) pubblicazione su display o salvataggio in Redis
+    # Pubblica su RabbitMQ
+    channel.basic_publish(
+    exchange="",
+    routing_key=data.queue_id,  # es: "sportello1"
+    body=str(ticket_number)
+)
+
     return {"queue": data.queue_id, "ticket": ticket_number}
+
