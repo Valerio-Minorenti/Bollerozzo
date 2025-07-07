@@ -40,7 +40,8 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - NUMBER_SERVICE_URL=http://number-service:8000
+      - NUMBER_SERVICE_HOST=number-service
+      - NUMBER_SERVICE_PORT=8000
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
     restart: unless-stopped
