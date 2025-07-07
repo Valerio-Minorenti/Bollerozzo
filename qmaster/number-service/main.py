@@ -1,18 +1,35 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+import requests
+import os
 
 app = FastAPI()
 
-# Dizionario per tenere traccia dei numeri per ciascuna coda
-counters = {}
+# Configurazione dinamica host/porta del number-service
+NUMBER_SERVICE_HOST = os.getenv("NUMBER_SERVICE_HOST", "localhost")
+NUMBER_SERVICE_PORT = os.getenv("NUMBER_SERVICE_PORT", "8000")
 
+# Modello per ricevere input
+class QueueRequest(BaseModel):
+    queue_id: str
+
+# Test base
 @app.get("/")
 def root():
     return {"message": "Queue Service is running"}
 
-@app.get("/next-number/{queue_id}")
-def next_number(queue_id: str):
-    if queue_id not in counters:
-        counters[queue_id] = 1
-    else:
-        counters[queue_id] += 1
-    return {"next": counters[queue_id]}
+# Richiesta di ticket
+@app.post("/ticket")
+def take_ticket(data: QueueRequest):
+    try:
+        # Chiamata al number-service
+        response = requests.get(
+            f"http://{NUMBER_SERVICE_HOST}:{NUMBER_SERVICE_PORT}/next-number/{data.queue_id}"
+        )
+        response.raise_for_status()
+        ticket_number = response.json()["next"]
+    except Exception as e:
+        return {"error": f"Errore nel contattare number-service: {str(e)}"}
+
+    # (Facoltativo) pubblicazione su display o salvataggio in Redis
+    return {"queue": data.queue_id, "ticket": ticket_number}
