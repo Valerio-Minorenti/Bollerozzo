@@ -1,52 +1,21 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-import requests
+import redis
 import os
-import pika
-
-# Connessione a RabbitMQ
-rabbitmq_host = os.getenv("RABBITMQ_HOST", "rabbitmq")
-connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host))
-channel = connection.channel()
-
-# Dichiarazione delle code che ti servono
-channel.queue_declare(queue="sportello1", durable=True)
-channel.queue_declare(queue="display", durable=True)
 
 app = FastAPI()
 
-# Configurazione dinamica host/porta del number-service
-NUMBER_SERVICE_HOST = os.getenv("NUMBER_SERVICE_HOST", "localhost")
-NUMBER_SERVICE_PORT = os.getenv("NUMBER_SERVICE_PORT", "8000")
+redis_host = os.getenv("REDIS_HOST", "redis")  # usa il nome del servizio Docker
+redis_port = int(os.getenv("REDIS_PORT", 6379))
 
-# Modello per ricevere input
-class QueueRequest(BaseModel):
-    queue_id: str
+r = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
 
-# Test base
+
 @app.get("/")
 def root():
-    return {"message": "Queue Service is running"}
+    return {"message": "Number Service is running"}
 
-# Richiesta di ticket
-@app.post("/ticket")
-def take_ticket(data: QueueRequest):
-    try:
-        # Chiamata al number-service
-        response = requests.get(
-            f"http://{NUMBER_SERVICE_HOST}:{NUMBER_SERVICE_PORT}/next-number/{data.queue_id}"
-        )
-        response.raise_for_status()
-        ticket_number = response.json()["next"]
-    except Exception as e:
-        return {"error": f"Errore nel contattare number-service: {str(e)}"}
-
-    # Pubblica su RabbitMQ
-    channel.basic_publish(
-    exchange="",
-    routing_key=data.queue_id,  # es: "sportello1"
-    body=str(ticket_number)
-)
-
-    return {"queue": data.queue_id, "ticket": ticket_number}
-
+@app.get("/next-number/{queue_id}")
+def get_next_number(queue_id: str):
+    # Incrementa il numero del ticket per la coda specifica
+    next_number = r.incr(f"queue:{queue_id}")
+    return {"next": next_number}
