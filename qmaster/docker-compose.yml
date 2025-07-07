@@ -50,9 +50,12 @@ services:
   display-service:
     build: ./display-service
     container_name: display-service
+    ports:
+      - "3000:3000"
     depends_on:
       - rabbitmq
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
     restart: unless-stopped
+
