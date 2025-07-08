@@ -1,13 +1,17 @@
-setInterval(async () => {
-    try {
-        const res = await fetch("/last-called");
-        const data = await res.json();
+function aggiornaDisplay() {
+    fetch('/last-called')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('coda').textContent = data.coda || "---";
+            document.getElementById('numero').textContent = data.numero || "--";
+        })
+        .catch(error => {
+            console.error("Errore nel recupero dati:", error);
+        });
+}
 
-        if (data.coda && data.numero) {
-            document.getElementById("coda").innerText = `Coda: ${data.coda}`;
-            document.getElementById("numero").innerText = `Numero: ${data.numero}`;
-        }
-    } catch (e) {
-        console.error("Errore nel recupero dati display:", e);
-    }
-}, 3000); // aggiorna ogni 3 secondi
+// aggiorna subito all'apertura
+aggiornaDisplay();
+
+// aggiorna ogni 2 secondi
+setInterval(aggiornaDisplay, 2000);
