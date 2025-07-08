@@ -1,79 +1,47 @@
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import pika
 import json
-import time
 import threading
-from fastapi import FastAPI, WebSocket
-from fastapi.responses import HTMLResponse
 
 app = FastAPI()
-clients = []
 
-html = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Display</title>
-</head>
-<body>
-    <h1>Numero chiamato</h1>
-    <h2 id="numero">In attesa...</h2>
-    <script>
-        const ws = new WebSocket("ws://" + location.host + "/ws");
-        ws.onmessage = (event) => {
-            document.getElementById("numero").innerText = event.data;
-        };
-    </script>
-</body>
-</html>
-"""
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
-@app.get("/")
-async def index():
-    return HTMLResponse(html)
+latest_data = {"coda": "---", "numero": "---"}
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    clients.append(websocket)
-    try:
-        while True:
-            await websocket.receive_text()  # usato solo per mantenere aperta la connessione
-    except:
-        clients.remove(websocket)
+@app.get("/", response_class=HTMLResponse)
+def display_page(request: Request):
+    return templates.TemplateResponse("display.html", {"request": request})
 
-def notify_clients(message: str):
-    for client in clients:
+@app.get("/last-called")
+def get_last_called():
+    return latest_data
+
+def consume_rabbit():
+    def callback(ch, method, properties, body):
         try:
-            import asyncio
-            asyncio.create_task(client.send_text(message))
+            data = json.loads(body)
+            latest_data["coda"] = data.get("coda", "---")
+            latest_data["numero"] = data.get("numero_chiamato", "---")
+            print(f"📺 DISPLAY >> {latest_data}")
         except Exception as e:
-            print(f"[ERRORE INVIO WEBSOCKET] {e}")
+            print(f"[ERRORE] Errore parsing messaggio: {e}")
 
-def rabbit_listener():
     while True:
         try:
             connection = pika.BlockingConnection(pika.ConnectionParameters(host="rabbitmq"))
             channel = connection.channel()
             channel.queue_declare(queue='display', durable=True)
-
-            print("📺 Display in ascolto su 'display'...")
-
-            def callback(ch, method, properties, body):
-                try:
-                    data = json.loads(body)
-                    coda = data.get("coda")
-                    numero = data.get("numero_chiamato")
-                    msg = f"Coda {coda}: Numero {numero}"
-                    print(f"📺 {msg}")
-                    notify_clients(msg)
-                except Exception as e:
-                    print(f"[ERRORE PARSING] {e}")
-
             channel.basic_consume(queue='display', on_message_callback=callback, auto_ack=True)
             channel.start_consuming()
-        except pika.exceptions.AMQPConnectionError:
-            print("⚠️ RabbitMQ non disponibile. Riprovo tra 3s...")
+        except Exception:
+            import time
+            print("⚠️ RabbitMQ non disponibile. Riprovo tra 3 secondi...")
             time.sleep(3)
 
-# Avvia il thread consumer RabbitMQ
-threading.Thread(target=rabbit_listener, daemon=True).start()
+# Avvia il listener RabbitMQ in un thread separato
+threading.Thread(target=consume_rabbit, daemon=True).start()
