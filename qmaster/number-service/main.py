@@ -31,7 +31,13 @@ def get_next_number(queue_id: str):
 
 @app.get("/queues")
 def get_available_queues():
-    # Recupera tutte le chiavi Redis che rappresentano le code
     keys = r.keys("queue:*")
     queues = [key.split("queue:")[1] for key in keys]
     return JSONResponse(content=queues)
+
+@app.post("/queue/{queue_id}/ticket")
+def enqueue_ticket(queue_id: str):
+    # Simuliamo una lista FIFO di ticket
+    ticket_number = r.incr(f"ticket_counter:{queue_id}")
+    r.rpush(f"queue:{queue_id}:waiting", ticket_number)
+    return {"message": f"Sei stato messo in coda con il ticket N. {ticket_number}"}

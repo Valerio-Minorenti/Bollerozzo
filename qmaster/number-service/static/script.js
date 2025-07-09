@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-    // Carica dinamicamente gli sportelli attivi
     fetch("/queues")
         .then(response => {
             if (!response.ok) throw new Error("Errore nel caricamento sportelli");
@@ -7,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(queues => {
             const select = document.getElementById("queue");
-            select.innerHTML = ""; // Pulisce le opzioni
+            select.innerHTML = "";
 
             queues.forEach(queue => {
                 const option = document.createElement("option");
@@ -26,19 +25,20 @@ document.addEventListener("DOMContentLoaded", function () {
 function richiediTicket() {
     const queue = document.getElementById("queue").value;
 
-    fetch(`/next-number/${queue}`)
+    fetch(`/queue/${queue}/ticket`, {
+        method: "POST"
+    })
         .then(response => {
-            if (!response.ok) throw new Error("Errore nella richiesta");
+            if (!response.ok) throw new Error("Errore durante la richiesta del ticket");
             return response.json();
         })
         .then(data => {
-            const numero = data.next;
             document.getElementById("risultato").innerText =
-                 `Hai ricevuto il ticket N. ${numero} per la coda "${queue}"`;
+                `✅ ${data.message}`;
         })
         .catch(error => {
             console.error(error);
             document.getElementById("risultato").innerText =
-                "❌ Errore nel recupero del ticket.";
+                "❌ Errore nella richiesta del ticket.";
         });
 }
