@@ -1,5 +1,3 @@
-Copia
-Modifica
 fastapi
 uvicorn
 redis
