@@ -1,3 +1,7 @@
+nginx
+Copia
+Modifica
 fastapi
 uvicorn
 redis
+jinja2

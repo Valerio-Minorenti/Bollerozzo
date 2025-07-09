@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Stato Code</title>
+  <link rel="stylesheet" href="/static/stilozzo.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #2945ff, #1d95fd);
+      color: white;
+      margin: 0;
+      padding-top: 0.5rem; /* 🔼 quasi attaccato al top */
+    }
+
+    table {
+      width: 80%;
+      margin: 0 auto; /* 🔼 elimina spazi sopra e sotto */
+      border-collapse: collapse;
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    th, td {
+      text-align: center;
+      padding: 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    th {
+      background-color: rgba(255, 255, 255, 0.1);
+      font-size: 1.2rem;
+    }
+
+    .title-cell {
+      font-size: 2.2rem;
+      font-weight: bold;
+      text-align: center;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <table id="code-table">
+    <thead>
+      <tr>
+        <th colspan="3" class="title-cell">🛠 Pannello Admin: Stato delle Code</th>
+      </tr>
+      <tr>
+        <th>Coda</th>
+        <th>Ultimo Chiamato</th>
+        <th>In Attesa</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- JS popolerà qui -->
+    </tbody>
+  </table>
+
+  <p class="footer">QMaster © 2025</p>
+
+  <script src="/static/admin.js"></script>
+</body>
+</html>

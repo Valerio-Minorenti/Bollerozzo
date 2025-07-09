@@ -1,43 +1,53 @@
 body {
     margin: 0;
     padding: 0;
-    background: linear-gradient(to bottom right, #003366, #006699);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-}
-
-.container {
-    text-align: center;
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 40px;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.3);
-    width: 90%;
-    max-width: 600px;
+    background-color: #ffffff;
+    color: #333;
 }
 
 h1 {
-    font-size: 2.5rem;
-    margin-bottom: 20px;
+    margin-top: 20px; /* 🔼 Ridotto margine top */
+    text-align: center;
+    font-size: 32px;
+    color: #1a1a1a;
 }
 
-.numero-box {
-    font-size: 6rem;
+table {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto 0 auto; /* 🔼 Avvicina la tabella al top */
+    border-collapse: collapse;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 14px 20px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #1a73e8; /* ✅ Più scuro per il testo bianco */
+    color: white;
     font-weight: bold;
-    background-color: #ffffff22;
-    border-radius: 15px;
-    padding: 30px;
-    margin-bottom: 30px;
-    border: 3px solid #ffffff44;
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
 }
 
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* ✅ Footer centrato in basso */
 .footer {
-    font-size: 1rem;
-    color: #ddd;
-    margin-top: 20px;
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 13px;
+    color: #888;
+    width: 100%;
 }

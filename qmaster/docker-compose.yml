@@ -12,8 +12,8 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"       # Porta AMQP per comunicazione tra servizi
-      - "15672:15672"     # Interfaccia web di gestione
+      - "5672:5672"
+      - "15672:15672"
     restart: unless-stopped
 
   number-service:
@@ -40,8 +40,6 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - NUMBER_SERVICE_HOST=number-service
-      - NUMBER_SERVICE_PORT=8000
       - NUMBER_SERVICE_URL=http://number-service:8000
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -54,8 +52,9 @@ services:
       - "3000:3000"
     depends_on:
       - rabbitmq
+      - queue-service
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
+      - QUEUE_SERVICE_URL=http://queue-service:8000
     restart: unless-stopped
-

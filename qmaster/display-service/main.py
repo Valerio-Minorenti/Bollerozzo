@@ -7,32 +7,50 @@ import json
 import threading
 import os
 import time
+import requests
 
 # 🔧 Configurazione ambiente
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
+QUEUE_SERVICE_URL = os.getenv("QUEUE_SERVICE_URL", "http://queue-service:8000")
 
 # 🚀 Avvia l'app FastAPI
 app = FastAPI()
 
-# 📂 Configura statici e templates
+# 📂 Statici e template
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# 💾 Stato condiviso aggiornato da RabbitMQ
+# 💾 Stato numero corrente aggiornato da RabbitMQ
 latest_data = {"coda": "---", "numero": "---"}
 
-# 🌐 Home page visuale
+# 🌐 Pagina display pubblica
 @app.get("/", response_class=HTMLResponse)
 def display_page(request: Request):
     return templates.TemplateResponse("display.html", {"request": request})
 
-# 🔁 Endpoint REST per polling JS
+# 🔁 Polling per display pubblico
 @app.get("/last-called", response_class=JSONResponse)
 def get_last_called():
     return latest_data
 
-# 🔔 Consumo messaggi da RabbitMQ in background
+# 🧠 Pagina pannello admin HTML
+@app.get("/admin", response_class=HTMLResponse)
+def admin_dashboard(request: Request):
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+# 📊 API proxy per stato delle code (proxy a queue-service)
+@app.get("/admin/queues", response_class=JSONResponse)
+def admin_queues_status():
+    try:
+        response = requests.get(f"{QUEUE_SERVICE_URL}/queues/status", timeout=3)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return JSONResponse(status_code=502, content={"error": f"Errore dal queue-service: {e}"})
+
+
+# 🔔 RabbitMQ consumer
 def consume_rabbit():
     def callback(ch, method, properties, body):
         try:
@@ -57,5 +75,5 @@ def consume_rabbit():
             print(f"⚠️ Errore connessione RabbitMQ: {e}. Riprovo tra 3 secondi...")
             time.sleep(3)
 
-# 🔄 Esegui listener in thread separato
+# 🔄 Avvia RabbitMQ listener in thread separato
 threading.Thread(target=consume_rabbit, daemon=True).start()

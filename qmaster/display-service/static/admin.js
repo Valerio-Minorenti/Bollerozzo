@@ -1,6 +1,6 @@
 async function fetchQueuesStatus() {
     try {
-        const response = await fetch("/queues/status");
+        const response = await fetch("/admin/queues");
         const data = await response.json();
         renderQueueTable(data);
     } catch (error) {

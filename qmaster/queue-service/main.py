@@ -123,10 +123,7 @@ def all_queues_status():
 
     return results
 
-# 🧠 Pannello Admin HTML
-@app.get("/admin", response_class=HTMLResponse)
-def admin_dashboard(request: Request):
-    return templates.TemplateResponse("admin.html", {"request": request})
+
 
 # 🔍 Test
 @app.get("/")

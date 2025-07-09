@@ -2,3 +2,5 @@ fastapi
 uvicorn
 pika
 jinja2
+requests
+redis

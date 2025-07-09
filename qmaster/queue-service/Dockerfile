@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./main.py ./main.py
 COPY ./requirements.txt ./requirements.txt
 COPY ./templates ./templates
-COPY ./static ./static   # Solo se esiste
+COPY ./static ./static   
 
 
 # Avvia il servizio FastAPI sulla porta 5000
