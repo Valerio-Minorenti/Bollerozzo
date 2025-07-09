@@ -1,5 +1,8 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
 import redis
 import os
 import requests
@@ -13,22 +16,21 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("queue-service")
 
-# 🔧 Configurazione Redis
+# 📂 Static e Template
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+# 🔧 Config
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-
-# 🔧 Configurazione number-service
 NUMBER_SERVICE_URL = os.getenv("NUMBER_SERVICE_URL", "http://number-service:8000")
-
-# 🔧 Configurazione RabbitMQ
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
 
-# 🔌 Connessione a Redis
+# 🔌 Redis
 r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
-
-# 📤 Pubblica un messaggio su RabbitMQ
+# 📤 Invia a RabbitMQ
 def publish_display_message(queue_id: str, numero: int):
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT))
@@ -45,23 +47,20 @@ def publish_display_message(queue_id: str, numero: int):
             routing_key='display',
             body=json.dumps(message)
         )
-
         connection.close()
         logger.info(f"📢 Messaggio inviato al display: {message}")
 
     except Exception as e:
         logger.error(f"[ERRORE RABBITMQ] {e}")
 
-
-# ✅ Crea una nuova coda (opzionale)
+# ✅ Crea una coda
 @app.post("/queue/{queue_id}/create")
 def create_queue(queue_id: str):
     r.delete(f"queue:{queue_id}:waiting_list")
     r.set(f"queue:{queue_id}:last_called", 0)
     return {"message": f"Coda '{queue_id}' creata"}
 
-
-# 🎟️ Richiedi un nuovo numero per una coda
+# 🎟️ Richiedi un numero
 @app.post("/queue/{queue_id}/ticket")
 def get_ticket(queue_id: str):
     try:
@@ -79,27 +78,20 @@ def get_ticket(queue_id: str):
     logger.info(f"🎟️ Numero {ticket} assegnato alla coda '{queue_id}'")
     return {"ticket": ticket}
 
-
-# 🔔 Chiama il prossimo numero
+# 🔔 Chiama il prossimo
 @app.post("/queue/{queue_id}/next")
 def call_next(queue_id: str):
     next_ticket = r.lpop(f"queue:{queue_id}:waiting_list")
     if next_ticket:
         r.set(f"queue:{queue_id}:last_called", next_ticket)
-
-        # Notifica su Redis Pub/Sub (opzionale)
         r.publish(f"queue:{queue_id}:updates", f"Chiamato numero {next_ticket}")
-
-        # Notifica display via RabbitMQ
         publish_display_message(queue_id, next_ticket)
-
         logger.info(f"📞 Numero {next_ticket} chiamato per la coda '{queue_id}'")
         return {"called": next_ticket}
 
     return JSONResponse(status_code=204, content={"message": "Nessun numero in attesa."})
 
-
-# 📊 Stato della coda
+# 📊 Stato singola coda
 @app.get("/queue/{queue_id}/status")
 def queue_status(queue_id: str):
     last_called = r.get(f"queue:{queue_id}:last_called") or "Nessuno"
@@ -109,8 +101,34 @@ def queue_status(queue_id: str):
         "in_attesa": waiting
     }
 
+# 📈 Stato di tutte le code (per Admin Panel)
+@app.get("/queues/status")
+def all_queues_status():
+    keys = r.keys("queue:*:waiting_list")
+    seen = set()
+    results = []
 
-# 🔍 Test di base
+    for key in keys:
+        queue_id = key.split(":")[1]
+        if queue_id in seen:
+            continue
+        seen.add(queue_id)
+        waiting = r.lrange(f"queue:{queue_id}:waiting_list", 0, -1)
+        last_called = r.get(f"queue:{queue_id}:last_called") or "Nessuno"
+        results.append({
+            "queue_id": queue_id,
+            "ultimo_chiamato": last_called,
+            "in_attesa": waiting
+        })
+
+    return results
+
+# 🧠 Pannello Admin HTML
+@app.get("/admin", response_class=HTMLResponse)
+def admin_dashboard(request: Request):
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+# 🔍 Test
 @app.get("/")
 def read_root():
     return {"message": "✅ Queue Service is running"}
