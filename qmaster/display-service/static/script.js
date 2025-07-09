@@ -1,29 +1,15 @@
-async function fetchQueues() {
+async function updateDisplay() {
     try {
-        const response = await fetch("http://localhost:5000/queues/status");
+        const response = await fetch("/last-called");
         const data = await response.json();
-        renderTable(data);
+
+        document.getElementById("coda").textContent = data.coda || "---";
+        document.getElementById("numero").textContent = data.numero || "--";
     } catch (error) {
-        console.error("Errore nel recupero delle code:", error);
+        console.error("❌ Errore nel recupero del numero:", error);
     }
 }
 
-function renderTable(queues) {
-    const tbody = document.querySelector("#code-table tbody");
-    tbody.innerHTML = "";
-
-    queues.forEach(queue => {
-        const row = document.createElement("tr");
-
-        row.innerHTML = `
-            <td>${queue.queue_id}</td>
-            <td>${queue.ultimo_chiamato}</td>
-            <td>${queue.in_attesa.join(", ") || "-"}</td>
-        `;
-
-        tbody.appendChild(row);
-    });
-}
-
-setInterval(fetchQueues, 2000); // Aggiorna ogni 2 secondi
-fetchQueues(); // Chiamata iniziale
+// Avvia aggiornamento ogni 2 secondi
+setInterval(updateDisplay, 2000);
+updateDisplay();  // Primo aggiornamento subito

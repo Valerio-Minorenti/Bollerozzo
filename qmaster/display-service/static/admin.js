@@ -2,11 +2,13 @@ async function fetchQueuesStatus() {
     try {
         const response = await fetch("/admin/queues");
         const data = await response.json();
+        console.log("✅ Dati ricevuti:", data);
         renderQueueTable(data);
     } catch (error) {
         console.error("❌ Errore nel recupero delle code:", error);
     }
 }
+
 
 function renderQueueTable(queues) {
     const tbody = document.querySelector("#code-table tbody");

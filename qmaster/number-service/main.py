@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import redis
@@ -7,7 +7,7 @@ import os
 
 app = FastAPI()
 
-# Redis connection (docker friendly)
+# Redis connection
 redis_host = os.getenv("REDIS_HOST", "redis")
 redis_port = int(os.getenv("REDIS_PORT", 6379))
 r = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
@@ -28,3 +28,10 @@ def ticket_page(request: Request):
 def get_next_number(queue_id: str):
     next_number = r.incr(f"queue:{queue_id}")
     return {"next": next_number}
+
+@app.get("/queues")
+def get_available_queues():
+    # Recupera tutte le chiavi Redis che rappresentano le code
+    keys = r.keys("queue:*")
+    queues = [key.split("queue:")[1] for key in keys]
+    return JSONResponse(content=queues)
