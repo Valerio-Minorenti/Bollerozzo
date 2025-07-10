@@ -9,6 +9,8 @@ import os
 import time
 import requests
 
+print("valerio è frocio e matteo è stempiato")
+
 # 🔧 Configurazione ambiente
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
