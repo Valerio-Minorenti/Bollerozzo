@@ -31,9 +31,15 @@ def get_next_number(queue_id: str):
 
 @app.get("/queues")
 def get_available_queues():
-    keys = r.keys("queue:*")
-    queues = [key.split("queue:")[1] for key in keys]
+    # Prendi solo i nomi delle code (sportelli) da ticket_counter
+    keys = r.keys("ticket_counter:*")
+    queues = []
+    for key in keys:
+        queue_name = key.replace("ticket_counter:", "")
+        if ":" not in queue_name:  # Esclude "sportello1:last_called"
+            queues.append(queue_name)
     return JSONResponse(content=queues)
+
 
 @app.post("/queue/{queue_id}/ticket")
 def enqueue_ticket(queue_id: str):
